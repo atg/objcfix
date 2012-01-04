@@ -68,7 +68,7 @@ def parsefile(root, subpath, isheader):
                 impkind = imp[3] 
             
             impbody = imp[4]            
-            defs.append(parseimp(impname, impkind, impbody))
+            defs.append(parseimp(subpath, impname, impkind, impbody))
     
     # Find any interfaces
     intfs = re.findall(interface_re, contents)
@@ -76,31 +76,38 @@ def parsefile(root, subpath, isheader):
         intfname = intf[0]
         intfrawkind = intf[1].rstrip()
         intfbody = intf[6]
-        defs.append(parseinterface(intfname, intfrawkind, intfbody))
+        defs.append(parseinterface(subpath, intfname, intfrawkind, intfbody))
     
     return defs
 
-def parseimp(name, kind, body):
+## TODO
+## Handle categories differently to classes
+## Categories should have a name of 'ClassName (CategoryName)'
+## Add a new basename key that's just for ClassName
+
+def parseimp(subpath, name, kind, body):
     # Find methods in body
     matches = re.findall(method_def_re, body)
-    if not matches:
-        return []
-    parsedmethods = [parsemeth(meth) for meth in matches]
+    parsedmethods = []
+    if matches:
+        parsedmethods = [parsemeth(meth) for meth in matches]
+    
     return {
         'type': '@implementation',
         'name': name,
         'methods': parsedmethods,
         'kind': kind,
-        'selectors': [selector_from_signature(sig) for sig in parsedmethods]
+        'selectors': set(selector_from_signature(sig) for sig in parsedmethods),
+        'subpath': subpath,
         # synthesizes: synthesizes
     }
 
-def parseinterface(name, kind, body):
+def parseinterface(subpath, name, kind, body):
     # Find methods in body
     matches = re.findall(method_dec_re, body)
-    if not matches:
-        return []
-    parsedmethods = [parsemeth(meth) for meth in matches]
+    parsedmethods = []
+    if matches:
+        parsedmethods = [parsemeth(meth) for meth in matches]
     
     subtype = 'normal'
     category_name = ''
@@ -125,7 +132,8 @@ def parseinterface(name, kind, body):
         'category_name': category_name,
         'superclass_name': superclass_name,
         
-        'selectors': [selector_from_signature(sig) for sig in parsedmethods]
+        'selectors': set(selector_from_signature(sig) for sig in parsedmethods),
+        'subpath': subpath,
         # synthesizes: synthesizes
     }
 

@@ -2,6 +2,7 @@ import argparse
 import os
 import scanner
 import parser
+import analyzer
 
 def main():
     p = argparse.ArgumentParser()
@@ -12,8 +13,7 @@ def main():
     
     files = scanner.scan(root)
     defs = parser.parse(root, files)
-    for d in defs:
-        print d
+    results = analyzer.analyze(root, files, defs)
 
 if __name__ == "__main__":
     main()

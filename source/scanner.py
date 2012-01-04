@@ -15,7 +15,7 @@ def isvaliddir(d):
     return True
 
 def scan(root):
-    print 'scanner:' + root
+    print 'SCANNING ' + root
     
     headerfiles = set()
     impfiles = set()
@@ -39,7 +39,7 @@ def scan(root):
             elif ext in IMP_EXTS:
                 impfiles.add(relpath)
             
-            print relpath
+            # print relpath
     return {
         'header_paths': headerfiles,
         'imp_paths': impfiles,
