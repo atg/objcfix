@@ -29,6 +29,13 @@ method_dec_re = re.compile(method_re + r';', re.MULTILINE)
 # Message send regex
 message_re = re.compile(r'...', re.MULTILINE)
 
+# Signature regex
+
+# - (void) foo :a bar:b baz:c ;
+sig_re = re.compile(ident(r'IDENT\:'))
+# - (void) foo ;
+basic_sig_re = re.compile(ident(r'(IDENT)\s*$'))
+
 def parse(root, files):
     return chain(
         flatten(parsefile(root, f, False) for f in files["imp_paths"]),
@@ -51,7 +58,6 @@ def parsefile(root, subpath, isheader):
     if not isheader:
         imps = re.findall(implementation_re, contents)
         for imp in imps:
-            # print imp
             impname = imp[0]
             imprawkind = imp[1]
             if imprawkind == '':
@@ -62,22 +68,74 @@ def parsefile(root, subpath, isheader):
                 impkind = imp[3] 
             
             impbody = imp[4]            
-            defs.extend(parseimp(impname, impkind, impbody))
+            defs.append(parseimp(impname, impkind, impbody))
     
-    #print defs
+    # Find any interfaces
+    intfs = re.findall(interface_re, contents)
+    for intf in intfs:
+        intfname = intf[0]
+        intfrawkind = intf[1].rstrip()
+        intfbody = intf[6]
+        defs.append(parseinterface(intfname, intfrawkind, intfbody))
     
     return defs
 
 def parseimp(name, kind, body):
     # Find methods in body
     matches = re.findall(method_def_re, body)
-    #print matches
     if not matches:
         return []
-    return [parsemeth(meth) for meth in matches]
+    parsedmethods = [parsemeth(meth) for meth in matches]
+    return {
+        'type': '@implementation',
+        'name': name,
+        'methods': parsedmethods,
+        'kind': kind,
+        'selectors': [selector_from_signature(sig) for sig in parsedmethods]
+        # synthesizes: synthesizes
+    }
+
+def parseinterface(name, kind, body):
+    # Find methods in body
+    matches = re.findall(method_dec_re, body)
+    if not matches:
+        return []
+    parsedmethods = [parsemeth(meth) for meth in matches]
+    
+    subtype = 'normal'
+    category_name = ''
+    superclass_name = ''
+    if not kind:
+        pass
+    elif kind[0] == '(':
+        subtype = 'category'
+        category_name = kind[1:-1].strip()
+        if not category_name:
+            subtype = 'extension'
+    elif kind[0] == ':':
+        superclass_name = kind[1:].strip()
+    
+    return {
+        'type': '@interface',
+        'name': name,
+        'methods': parsedmethods,
+        'kind': kind,
+        
+        'subtype': subtype,
+        'category_name': category_name,
+        'superclass_name': superclass_name,
+        
+        'selectors': [selector_from_signature(sig) for sig in parsedmethods]
+        # synthesizes: synthesizes
+    }
 
 def parsemeth(methgroup):
-    return methgroup.rstrip()
+    return ' '.join(methgroup.rstrip().split())
 
+def selector_from_signature(sig):
+    sig = sig.lstrip()
     
-    
+    comps = re.findall(sig_re, sig)
+    if not comps:
+        comps = [re.findall(basic_sig_re, sig)[-1]]
+    return (sig[0]) + ''.join(comps)

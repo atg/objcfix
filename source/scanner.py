@@ -44,5 +44,3 @@ def scan(root):
         'header_paths': headerfiles,
         'imp_paths': impfiles,
     }
-    
-    
