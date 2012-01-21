@@ -1,5 +1,6 @@
 import argparse
 import os
+import sanity
 import scanner
 import parser
 import analyzer
@@ -11,6 +12,8 @@ def main():
     args = p.parse_args()
     
     root = os.path.abspath(args.rootdir)
+    
+    sanity.ensure(root)
     
     files = scanner.scan(root)
     defs = list(parser.parse(root, files))
