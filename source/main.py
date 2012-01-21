@@ -3,6 +3,7 @@ import os
 import scanner
 import parser
 import analyzer
+import fixer
 
 def main():
     p = argparse.ArgumentParser()
@@ -12,8 +13,10 @@ def main():
     root = os.path.abspath(args.rootdir)
     
     files = scanner.scan(root)
-    defs = parser.parse(root, files)
+    defs = list(parser.parse(root, files))
     results = analyzer.analyze(root, files, defs)
+    
+    fixer.fix(root, defs, results)
 
 if __name__ == "__main__":
     main()

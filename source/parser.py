@@ -92,11 +92,28 @@ def parseimp(subpath, name, kind, body):
     if matches:
         parsedmethods = [parsemeth(meth) for meth in matches]
     
+    subtype = 'normal'
+    category_name = ''
+    if kind == '':
+        pass
+    elif kind == '()':
+        subtype = 'extension'
+    else:
+        subtype = 'category'
+        category_name = kind
+    
+    fullname = name
+    if subtype == 'category':
+        fullname = '%s (%s)' % (name, category_name)
+    
     return {
         'type': '@implementation',
-        'name': name,
+        'basename': name,
+        'name': fullname,
         'methods': parsedmethods,
         'kind': kind,
+        'subtype': subtype,
+        'category_name': category_name,
         'selectors': set(selector_from_signature(sig) for sig in parsedmethods),
         'subpath': subpath,
         # synthesizes: synthesizes
@@ -122,9 +139,14 @@ def parseinterface(subpath, name, kind, body):
     elif kind[0] == ':':
         superclass_name = kind[1:].strip()
     
+    fullname = name
+    if subtype == 'category':
+        fullname = '%s (%s)' % (name, category_name)
+    
     return {
         'type': '@interface',
-        'name': name,
+        'basename': name,
+        'name': fullname,
         'methods': parsedmethods,
         'kind': kind,
         
@@ -134,6 +156,7 @@ def parseinterface(subpath, name, kind, body):
         
         'selectors': set(selector_from_signature(sig) for sig in parsedmethods),
         'subpath': subpath,
+        'body': body,
         # synthesizes: synthesizes
     }
 
