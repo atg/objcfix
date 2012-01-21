@@ -1,6 +1,6 @@
 # objcfix -- find and add missing declarations
 
-**objcfix** is a small tool that scans your project, identifies any missing method declarations, class declarations, #imports, etc, and offers to add them.
+**objcfix** is a small tool that scans your project, identifies any missing method declarations and offers to add them.
 
 ## Requirements
 
