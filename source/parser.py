@@ -2,6 +2,7 @@ import os
 import itertools
 from itertools import chain
 import re
+import fixer
 
 def flatten(listOfLists):
     return chain.from_iterable(listOfLists)
@@ -19,7 +20,7 @@ implementation_re = re.compile(ident(r'@implementation\s+(IDENT)\s*((\(\s*(IDENT
 import_re = re.compile(r'\s*#\s*(import|include)\s*["<]([^">\n]+)[">]', re.MULTILINE)
 
 # @class regex
-class_re = re.compile(r'@class\s*((IDENT)(\s*,\s*IDENT)*)\s*;', re.MULTILINE)
+class_re = re.compile(ident(r'@class\s*((IDENT)(\s*,\s*IDENT)*)\s*;'), re.MULTILINE)
 
 # Method definition/declaration regex
 method_re = r'^\s*([+\-][a-zA-Z0-9&$:()^*\[\]<>\s]+)'
@@ -41,6 +42,43 @@ def parse(root, files):
         flatten(parsefile(root, f, False) for f in files["imp_paths"]),
         flatten(parsefile(root, f, True) for f in files["header_paths"])
     )
+
+def find_uses(root, subpath, symbol_names):
+    # Attempt to read the file
+    try:
+        path = os.path.join(root, subpath)
+        contents = open(path, 'r').read()
+        if not contents:
+            return set()
+    except Exception:
+        return set()
+    
+    # Make our regex
+    r = re.compile(r'(^|[^\w\d])(%s)($|[^\w\d])' % ('|'.join(map(re.escape, symbol_names))))
+    
+    return set(x[1] for x in r.findall(contents))
+
+def find_includes(root, subpath):
+    # Attempt to read the file
+    try:
+        path = os.path.join(root, subpath)
+        contents = open(path, 'r').read()
+        if not contents:
+            return {'#import':[], '@class':[]}
+    except Exception:
+        return {'#import':[], '@class':[]}
+    
+    imports = import_re.findall(contents)
+    classes = class_re.findall(contents)
+    
+    at_class_lines_gen = (fixer.stripsplit(at_class_line[0], ',') for at_class_line in classes)
+    at_class_lines = sum(at_class_lines_gen, [])
+    
+    return {
+        '#import': [x[1] for x in imports],
+        '@class': at_class_lines,
+    }
+    
 
 def parsefile(root, subpath, isheader):    
     # Attempt to read the file
@@ -116,6 +154,7 @@ def parseimp(subpath, name, kind, body):
         'category_name': category_name,
         'selectors': set(selector_from_signature(sig) for sig in parsedmethods),
         'subpath': subpath,
+        'body': body,
         # synthesizes: synthesizes
     }
 

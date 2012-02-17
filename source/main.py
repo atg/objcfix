@@ -17,9 +17,16 @@ def main():
     
     files = scanner.scan(root)
     defs = list(parser.parse(root, files))
-    results = analyzer.analyze(root, files, defs)
     
-    fixer.fix(root, defs, results)
+    fix_methods = False
+    if fix_methods:
+        results = analyzer.analyze(root, files, defs)
+        fixer.fix_method_declarations(root, defs, results)
+    else:
+        a2 = analyzer.analyze2(root, files, defs)
+        fixer.fix2(root, defs, files, a2)
+    
+    #fixer.fix_imports(root, defs)
 
 if __name__ == "__main__":
     main()

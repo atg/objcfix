@@ -1,8 +1,8 @@
 import os
 
 # Some of these were added purely for selfish reasons and are specific to Chocolat
-INVALID_DIR_NAMES = set(['.git', '.svn', 'build', 'git_ignored', 'Resources', 'boost'])
-INVALID_DIR_EXTS = set(['.xcodeproj', '.xcode', '.lproj', '.app'])
+INVALID_DIR_NAMES = set(['.git', '.svn', 'build', 'git_ignored', 'Resources', 'boost', 'old'])
+INVALID_DIR_EXTS = set(['.xcodeproj', '.xcode', '.lproj', '.app', '.framework'])
 HEADER_EXTS = set(['.h', '.hpp', '.hh'])
 IMP_EXTS = set(['.m', '.M', '.mm'])
 
